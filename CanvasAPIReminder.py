@@ -2,21 +2,23 @@
 
 import schedule
 import time
-from win10toast import ToastNotifier
+# from win10toast import ToastNotifier
+from tinyWinToast.tinyWinToast import *
+from pathlib import Path
+
+# constants
+PATH = Path("crm.ico").resolve()
 
 # functions
 def notify(assignment, dueDate, course):
     
     timeUntil = 1 # will change this to calculate a day count, potentially
 
-    toast = ToastNotifier()
-    toast.show_toast(
-        f"{assignment} Is Due Soon",
-        f"{assignment} for {course} is due on {dueDate}!",
-        duration=10,
-        icon_path="crm.ico",
-        threaded=True
-    )
+    toast = Toast()
+    toast.setTitle(f"An Assignment Will Be Due Soon!", maxLines=1)
+    toast.setMessage(f"{assignment} will be due on {dueDate} for {course}!", maxLines=4)
+    toast.setIcon(str(PATH), crop="circle")
+    toast.show()
 
 # reading in the API key and domain to use
 with open("info.txt", "r+") as info:
@@ -41,3 +43,6 @@ with open("info.txt", "r+") as info:
     # moving to the beginning of the file and then writing the information in
     info.seek(0)
     info.write(f"{api}\n{domain}\n# Enter your API key on the first line, and your school's Canvas domain for the second line, or follow the prompts in the program window")
+
+# debugging
+notify("Chess Board Creation", "2/22", "Chess Class")
