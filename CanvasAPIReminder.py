@@ -2,7 +2,8 @@
 
 import schedule
 import time
-# from win10toast import ToastNotifier
+import requests
+import datetime
 from tinyWinToast.tinyWinToast import *
 from pathlib import Path
 
@@ -45,4 +46,13 @@ with open("info.txt", "r+") as info:
     info.write(f"{api}\n{domain}\n# Enter your API key on the first line, and your school's Canvas domain for the second line, or follow the prompts in the program window")
 
 # debugging
-notify("Chess Board Creation", "2/22", "Chess Class")
+#notify("Chess Board Creation", "2/22", "Chess Class")
+
+aWeekFromToday = datetime.datetime.fromtimestamp(int(time.time())).strftime("%Y:%m:%d")
+
+files = {
+    'type': (None, 'assignment'),
+    'end_date': (None, aWeekFromToday),
+}
+
+#response = requests.get('https://<canvas>/api/v1/calendar_events.json', files=files)
