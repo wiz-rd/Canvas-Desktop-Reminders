@@ -1,3 +1,3 @@
-1
-domain
-# Enter your API key on the first line, and your school's Canvas domain for the second line, or follow the prompts in the program windowram window
+<API-KEY>
+<DOMAIN>
+# Enter your API key on the first line, and your school's Canvas domain for the second line, or follow the prompts in the program window
