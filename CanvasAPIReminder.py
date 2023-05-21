@@ -1,5 +1,23 @@
 # Canvas API Reminder Project - @wiz-rd
 
+import schedule
+import time
+from win10toast import ToastNotifier
+
+# functions
+def notify(assignment, dueDate, course):
+    
+    timeUntil = 1 # will change this to calculate a day count, potentially
+
+    toast = ToastNotifier()
+    toast.show_toast(
+        f"{assignment} Is Due Soon",
+        f"{assignment} for {course} is due on {dueDate}!",
+        duration=10,
+        icon_path="crm.ico",
+        threaded=True
+    )
+
 # reading in the API key and domain to use
 with open("info.txt", "r+") as info:
     # initializing API and domain info from file
