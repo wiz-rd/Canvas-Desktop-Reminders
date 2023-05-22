@@ -10,8 +10,15 @@ from pathlib import Path
 
 # constants
 PATH = Path("crm.ico").resolve()
+# colors
+CRED = '\033[91m'
+CGREEN = '\033[92m'
+CYELLOW = '\033[93m'
+CEND = '\033[0m'
+CR = '\n'
 
-# 604,800 seconds is a week #.strftime("%Y-%m-%d")
+# useful global variables
+# 604,800 seconds is a week
 today = datetime.datetime.today()
 todayString = datetime.datetime.fromtimestamp((time.time())).strftime("%Y-%m-%d")
 aWeekFromToday = datetime.datetime.fromtimestamp((time.time() + 604800)).isoformat()
@@ -20,18 +27,18 @@ aWeekFromToday = datetime.datetime.fromtimestamp((time.time() + 604800)).isoform
 try:
     f = open("info.txt", "x")
     f.close()
-except:
-    print("info.txt already exists")
+except FileExistsError:
+    print(CGREEN + "info.txt already exists" + CEND + CR)
 try:
     f = open("upcoming.json", "x")
     f.close()
-except:
-    print("upcoming.json already exists")
+except FileExistsError:
+    print(CGREEN + "upcoming.json already exists" + CEND + CR)
 try:
     f = open("assignments.json", "x")
     f.close()
-except:
-    print("assignments.json already exists")
+except FileExistsError:
+    print(CGREEN + "assignments.json already exists" + CEND + CR)
 
 # functions
 def notify(assignment, dueDateUnformatted, courseUnformatted):
@@ -42,29 +49,40 @@ def notify(assignment, dueDateUnformatted, courseUnformatted):
     dueDateFormatted = datetime.datetime.strptime(dueDateUnformatted, "%Y-%m-%dT%H:%M:%SZ")
 
     # calculates days remaining
-    timeUntil = dueDateFormatted - today
-    # formats this for ease and American eyes
-    dueDate = dueDateFormatted.strftime("%m/%d")
+    timeUntil = (dueDateFormatted - today).days
 
-    # showing a notification
-    toast = Toast()
-    toast.setTitle(f"{course} Assignment Due Soon!", maxLines=1)
-    toast.setMessage(f"{assignment} will be due on {dueDate} for {course}!\nYou have {timeUntil} days left to submit!", maxLines=4)
-    toast.setIcon(str(PATH), crop="circle")
-    toast.show()
+    # formats this for ease and American eyes
+    dueDate = dueDateFormatted.replace(tzinfo=dueDateFormatted.tzinfo).astimezone(tz=None).strftime("%m/%d")
+
+    if (timeUntil <= 7):
+        # showing a notification with tinyWinToast
+        toast = Toast()
+        toast.setTitle(f"Assignment Due Soon!", maxLines=1)
+        toast.setMessage(f"{assignment} will be due on {dueDate} for {course}!\nYou have {timeUntil} days left to submit!", maxLines=4)
+        toast.setIcon(str(PATH), crop="circle")
+        toast.show()
+    else:
+        return
 
 def getUpcomingEvents():
     link = domain + "api/v1/users/self/upcoming_events" + "?access_token=" + api
+    
+    # attempts to pull upcoming assignments given the api key and domain
+    try:
+        response = requests.get(link, verify=True)
+    except:
+        print(CRED + "There was an issue connecting. Aborting this attempt." + CEND)
+        return ""
 
-    response = requests.get(link, verify=True)
+    # loads json received from Canvas
     upcomings = json.loads(json.dumps(response.json()))
 
     for upcoming in upcomings:
-        # try:
-        print(upcoming["assignment"]["due_at"])
-        notify(upcoming["title"], upcoming["assignment"]["due_at"], upcoming["context_name"])
-        # except:
-        #     print(upcoming["title"] + " is not an assignment, skipping...")
+        try:
+            notify(upcoming["title"], upcoming["assignment"]["due_at"], upcoming["context_name"])
+        except Exception as e:
+            print(CRED + e + CEND)
+            print(upcoming["title"] + " is not an assignment, skipping...")
 
     return str(json.dumps(response.json()))
 
@@ -86,8 +104,8 @@ def mainProcess():
             domain = input("Please enter your school's domain: ")
 
         # for debugging and clarity
-        print(f"API Key: {api[0:20]}...")
-        print(f"Domain: {domain}")
+        print("API Key: " + CYELLOW + f"{api[0:20]}..." + CEND)
+        print("Domain: " + CYELLOW + f"{domain}" + CEND)
 
         # moving to the beginning of the file and then writing the information in
         info.seek(0)
@@ -99,5 +117,4 @@ def mainProcess():
 
 mainProcess()
 
-# debugging
-#notify("Chess Board Creation", "2/22", "Chess Class")
+schedule.every().day.at("10:00").do(mainProcess)
