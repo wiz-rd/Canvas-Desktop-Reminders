@@ -4,11 +4,16 @@ import schedule
 import time
 import requests
 import datetime
+import json
 from tinyWinToast.tinyWinToast import *
 from pathlib import Path
 
 # constants
 PATH = Path("crm.ico").resolve()
+
+# 604,800 seconds is a week #.strftime("%Y-%m-%d")
+today = datetime.datetime.fromtimestamp((time.time())).strftime("%Y-%m-%d")
+aWeekFromToday = datetime.datetime.fromtimestamp((time.time() + 604800)).isoformat()
 
 # ensuring the files exist. This seems to be the only way to create files in Python..? All I could find at least
 try:
@@ -17,10 +22,15 @@ try:
 except:
     print("info.txt already exists")
 try:
-    f = open("response.json", "x")
+    f = open("courses.json", "x")
     f.close()
 except:
-    print("response.txt already exists")
+    print("courses.json already exists")
+try:
+    f = open("assignments.json", "x")
+    f.close()
+except:
+    print("assignments.json already exists")
 
 # functions
 def notify(assignment, dueDate, course):
@@ -34,23 +44,36 @@ def notify(assignment, dueDate, course):
     toast.setIcon(str(PATH), crop="circle")
     toast.show()
 
-def callAPI(courseID):
-    # 604,800 seconds is a week
-    today = datetime.datetime.fromtimestamp((time.time())).strftime("%Y-%m-%d")
-    aWeekFromToday = datetime.datetime.fromtimestamp((time.time() + 604800)).isoformat() #.strftime("%Y-%m-%d")
-
+def getAssignments(courseID):
     # debugging
     print(f"{today}\n{aWeekFromToday}")
 
     link = domain + "api/v1/courses/" + courseID + "/assignments" + "?access_token=" + api
 
     jsonData = {
-        "end_at": aWeekFromToday
+        'end_at': aWeekFromToday
     }
 
     response = requests.get(link, data=jsonData, verify=True)
 
     return str(response.json())
+
+def callAllCourses():
+    link = domain + "api/v1/courses" + "?access_token=" + api
+
+    jsonData = {
+        'enrollment_state': 'active',
+        'exclude_blueprint_courses': 'true',
+        'include': 'concluded'
+    }
+
+    response = requests.get(link, data=jsonData, verify=True)
+    courses = json.loads(json.dumps(response.json()))
+
+    for course in courses:
+        print(course["uuid"])
+
+    return str(json.dumps(response.json()))
 
 def mainProcess():
     # reading in the API key and domain to use
@@ -77,9 +100,9 @@ def mainProcess():
         info.seek(0)
         info.write(f"{api}\n{domain}\n# Enter your API key on the first line, and your school's Canvas domain for the second line, or follow the prompts in the program window")
 
-    with open("response.json", "r+") as response:
+    with open("courses.json", "r+") as response:
         response.seek(0)
-        response.write(callAPI())
+        response.write(callAllCourses())
 
 mainProcess()
 
