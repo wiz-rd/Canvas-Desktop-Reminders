@@ -104,6 +104,7 @@ def mainProcess():
             domain = input("Please enter your school's domain: ")
 
         # for debugging and clarity
+        print("\nPerforming an API call with the following information:")
         print("API Key: " + CYELLOW + f"{api[0:20]}..." + CEND)
         print("Domain: " + CYELLOW + f"{domain}" + CEND)
 
@@ -117,4 +118,10 @@ def mainProcess():
 
 mainProcess()
 
-schedule.every().day.at("10:00").do(mainProcess)
+schedule.every().day.at("10:30").do(mainProcess)
+
+schedule.every().day.at("22:30").do(mainProcess)
+
+while True:
+    schedule.run_pending()
+    time.sleep(1)
