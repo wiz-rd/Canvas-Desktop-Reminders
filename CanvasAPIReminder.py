@@ -12,7 +12,8 @@ from pathlib import Path
 PATH = Path("crm.ico").resolve()
 
 # 604,800 seconds is a week #.strftime("%Y-%m-%d")
-today = datetime.datetime.fromtimestamp((time.time())).strftime("%Y-%m-%d")
+today = datetime.datetime.today()
+todayString = datetime.datetime.fromtimestamp((time.time())).strftime("%Y-%m-%d")
 aWeekFromToday = datetime.datetime.fromtimestamp((time.time() + 604800)).isoformat()
 
 # ensuring the files exist. This seems to be the only way to create files in Python..? All I could find at least
@@ -22,10 +23,10 @@ try:
 except:
     print("info.txt already exists")
 try:
-    f = open("courses.json", "x")
+    f = open("upcoming.json", "x")
     f.close()
 except:
-    print("courses.json already exists")
+    print("upcoming.json already exists")
 try:
     f = open("assignments.json", "x")
     f.close()
@@ -33,45 +34,37 @@ except:
     print("assignments.json already exists")
 
 # functions
-def notify(assignment, dueDate, course):
-    
-    today = time.time()
-    timeUntil = today - time.time() # will change this to calculate a day count, potentially
+def notify(assignment, dueDateUnformatted, courseUnformatted):
+    # grabbing just the course name
+    course = courseUnformatted.split(":")[1]
 
+    # getting the date as a string and converting it to a date object for delta time
+    dueDateFormatted = datetime.datetime.strptime(dueDateUnformatted, "%Y-%m-%dT%H:%M:%SZ")
+
+    # calculates days remaining
+    timeUntil = dueDateFormatted - today
+    # formats this for ease and American eyes
+    dueDate = dueDateFormatted.strftime("%m/%d")
+
+    # showing a notification
     toast = Toast()
     toast.setTitle(f"{course} Assignment Due Soon!", maxLines=1)
-    toast.setMessage(f"{assignment} will be due on {dueDate} for {course}!", maxLines=4)
+    toast.setMessage(f"{assignment} will be due on {dueDate} for {course}!\nYou have {timeUntil} days left to submit!", maxLines=4)
     toast.setIcon(str(PATH), crop="circle")
     toast.show()
 
-def getAssignments(courseID):
-    # debugging
-    print(f"{today}\n{aWeekFromToday}")
+def getUpcomingEvents():
+    link = domain + "api/v1/users/self/upcoming_events" + "?access_token=" + api
 
-    link = domain + "api/v1/courses/" + courseID + "/assignments" + "?access_token=" + api
+    response = requests.get(link, verify=True)
+    upcomings = json.loads(json.dumps(response.json()))
 
-    jsonData = {
-        'end_at': aWeekFromToday
-    }
-
-    response = requests.get(link, data=jsonData, verify=True)
-
-    return str(response.json())
-
-def callAllCourses():
-    link = domain + "api/v1/courses" + "?access_token=" + api
-
-    jsonData = {
-        'enrollment_state': 'active',
-        'exclude_blueprint_courses': 'true',
-        'include': 'concluded'
-    }
-
-    response = requests.get(link, data=jsonData, verify=True)
-    courses = json.loads(json.dumps(response.json()))
-
-    for course in courses:
-        print(course["uuid"])
+    for upcoming in upcomings:
+        # try:
+        print(upcoming["assignment"]["due_at"])
+        notify(upcoming["title"], upcoming["assignment"]["due_at"], upcoming["context_name"])
+        # except:
+        #     print(upcoming["title"] + " is not an assignment, skipping...")
 
     return str(json.dumps(response.json()))
 
@@ -100,9 +93,9 @@ def mainProcess():
         info.seek(0)
         info.write(f"{api}\n{domain}\n# Enter your API key on the first line, and your school's Canvas domain for the second line, or follow the prompts in the program window")
 
-    with open("courses.json", "r+") as response:
+    with open("upcoming.json", "r+") as response:
         response.seek(0)
-        response.write(callAllCourses())
+        response.write(getUpcomingEvents())
 
 mainProcess()
 
