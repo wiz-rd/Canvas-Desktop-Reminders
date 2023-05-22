@@ -3,3 +3,10 @@
  no Canvas desktop integration or programs exist, and I think it would be neat to receive unintrusive reminders that I have to do things.
 
  Note: This is only built to work on Windows. I don't know how to work it on other OS's, unfortunately.
+
+ # How to use:
+ First, clone the repository. I may export this into an exe for anyone to use, but for now it'll remain as is.
+
+ Then, run the Python file once. It may throw an error or crash, but that's fine; it should be creating files it needs. If it continues to throw errors, though, please notify me in some way or another so I can look into it.
+
+ Once it's done, open info.txt and input your API key from Canvas, and the domain of your school (for example, "https://canvas.stanford.edu/"). You can create a new API key your settings tab in Canvas (Settings, scroll to Approved Integrations > "New Access Token") and input it there.
