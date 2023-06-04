@@ -10,6 +10,8 @@ from pathlib import Path
 
 # constants
 PATH = Path("crm.ico").resolve()
+API_ERROR = "There is likely a problem with your API key"
+NOW = datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
 # colors
 CRED = '\033[91m'
 CGREEN = '\033[92m'
@@ -51,18 +53,48 @@ def notify(assignment, dueDateUnformatted, courseUnformatted):
     # calculates days remaining
     timeUntil = (dueDateFormatted - today).days
 
+    # for some reason - likely because the due date is often at 11:59 - the day given is one day past the actual due date. This is shifting it back by 4 hours to account for that
+    # NOTE: this is a temporary thing, if it causes issues, please let me know and I'll attempt to work out a different solution.
+    timeShifted = dueDateFormatted - datetime.timedelta(hours=4)
+
     # formats this for ease and American eyes
-    dueDate = dueDateFormatted.replace(tzinfo=dueDateFormatted.tzinfo).astimezone(tz=None).strftime("%m/%d")
+    # also - allegedly translates it to the user's timezone... no luck with this yet, though
+    dueDateTZ = timeShifted.astimezone()
+    dueDate = dueDateTZ.replace().astimezone().strftime("%m/%d")
+
+    # moving this to a separate variable for ease of editing
+    message = "\nYou have " + str(timeUntil) + " days left to submit!"
 
     if (timeUntil <= 7):
         # showing a notification with tinyWinToast
         toast = Toast()
-        toast.setTitle(f"Assignment Due Soon!", maxLines=1)
-        toast.setMessage(f"{assignment} will be due on {dueDate} for {course}!\nYou have {timeUntil} days left to submit!", maxLines=4)
+        toast.setTitle(f"{course}", maxLines=1)
+        toast.setMessage(f"{assignment} is due on {dueDate}!" + message, maxLines=4)
+        toast.setAppID("CRM")
         toast.setIcon(str(PATH), crop="circle")
         toast.show()
     else:
         return
+    
+def notifyError(error):
+    toast = Toast()
+    toast.setTitle("There was an error:")
+    toast.setMessage(error + ". See the log for details.")
+    toast.setAppID("CRM")
+    toast.setIcon(str(PATH), crop="circle")
+    toast.show()
+
+def log(message):
+    with open("log.txt", "a") as log:
+        print(message)
+        log.write(message)
+
+def log(message, secondaryMessage):
+    with open("log.txt", "a") as log:
+        print(message)
+        print(secondaryMessage)
+        log.write(NOW + ": " + message + "\n")
+        log.write(secondaryMessage + "\n")
 
 def getUpcomingEvents():
     link = domain + "api/v1/users/self/upcoming_events" + "?access_token=" + api
@@ -81,8 +113,12 @@ def getUpcomingEvents():
         try:
             notify(upcoming["title"], upcoming["assignment"]["due_at"], upcoming["context_name"])
         except Exception as e:
-            print(CRED + e + CEND)
-            print(upcoming["title"] + " is not an assignment, skipping...")
+            print(e)
+            try:
+                print(upcoming["title"] + " is not an assignment, skipping...")
+            except TypeError:
+                log("The API key you input is likely invalid. Please try again or enter a new one. See the API response here:", str(upcomings))
+                notifyError(API_ERROR)
 
     return str(json.dumps(response.json()))
 
@@ -117,6 +153,13 @@ def mainProcess():
         response.write(getUpcomingEvents())
 
 mainProcess()
+
+
+
+
+# TODO: potentially make two time options for the user to input into info.txt
+
+
 
 schedule.every().day.at("10:30").do(mainProcess)
 
