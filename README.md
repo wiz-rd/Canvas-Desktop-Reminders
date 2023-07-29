@@ -18,5 +18,7 @@
  <ul>
  <li> schedule</li>
  <li> tinyWinToast</li>
+ <li> pystray</li>
+ <li> pillow</li>
  </ul>
  Otherwise Python will throw an error or two. I can automate the install or use a virtual environment or something, but I feel that is both outside of the scope of this project, and also a bit overkill given how lightweight this project is intended to be.

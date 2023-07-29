@@ -5,6 +5,8 @@ import time
 import requests
 import datetime
 import json
+import pystray
+from PIL import Image
 from tinyWinToast.tinyWinToast import *
 from pathlib import Path
 
@@ -12,6 +14,7 @@ from pathlib import Path
 PATH = Path("canvas_reminders.ico").resolve()
 API_ERROR = "There is likely a problem with your API key"
 NOW = datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
+IMAGE = Image.open("canvas_reminders.ico")
 # colors
 CRED = '\033[91m'
 CGREEN = '\033[92m'
@@ -27,27 +30,53 @@ aWeekFromToday = datetime.datetime.fromtimestamp((time.time() + 604800)).isoform
 
 # the default config to be entered into info.json using the json library
 DEFAULT_CONFIG = {
-    "comment": "update both fields",
-    "api_key": "UPDATE ME",
+    "COMMENT": "update both fields",
+    "api_key": "update me",
     "domain": "https://canvas.stanford.edu/",
     "OPTIONAL": "the options below this line are optional",
     "morning_reminder": "10:30",
     "evening_reminder": "22:30"
 }
 
+
+def configSetup():
+    """
+    A single-use function to perform first-time setup of info.json
+    """
+
+    output = json.dumps(DEFAULT_CONFIG, indent=4)
+
+    # TODO: make sure this lines up with the correct json
+    with open("info.json", "r+") as cfg:
+        if len(cfg.read()) < 10:
+            cfg.seek(0)
+            cfg.write(output)
+            print(output)
+            return
+        else:
+            return
+
+
 # ensuring the files exist. This seems to be the only way to create files in Python..? All I could find at least
 try:
-    f = open("info.json", "x")
-    f.close()
+    open("info.json", "x").close()
+    configSetup()
+    exit(0)
 except FileExistsError:
     print(CGREEN + "info.json already exists" + CEND + CR)
 
-# TODO: debugging
-# try:
-#     f = open("upcoming.json", "x")
-#     f.close()
-# except FileExistsError:
-#     print(CGREEN + "upcoming.json already exists" + CEND + CR)
+# TODO: debugging // this file stores all upcoming events. Uncomment this and the other debugging TODO to see more information in file form
+try:
+    open("upcoming.json", "x").close()
+except FileExistsError:
+    print(CGREEN + "upcoming.json already exists" + CEND + CR)
+
+
+def on_clicked(icon, item):
+    if str(item) == "Close":
+        icon.stop()
+        print("exiting")
+        exit(0)
 
 
 # functions
@@ -149,7 +178,7 @@ def grabTimes() -> tuple[str, str]:
     """
     Grabs and returns the times to send reminders as selected by the user
     """
-    with open("info.json", "r+") as info:
+    with open("info.json", "r") as info:
 
         # loading in the json file
         json_f = json.load(info)
@@ -160,23 +189,18 @@ def grabTimes() -> tuple[str, str]:
     return morning, evening
 
 
-def configSetup():
-    """
-    A single-use function to perform first-time setup of info.json
-    """
-
-    output = json.dumps(DEFAULT_CONFIG, indent=4)
-
-    with open("info.json", "r+") as cfg:
-        if cfg.readlines() == "\n" or cfg.readlines() == "":
-            cfg.write(output)
-        else:
-            return
+def runAll(icon):
+    mainProcess()
+    icon.visible = True
+    while True:
+        schedule.run_pending()
+        time.sleep(20) # makes this less precise, but uses a lot less processing power
 
 
 def mainProcess():
     # reading in the API key and domain to use
-    with open("PERSONALinfo.json", "r+") as info:
+    # TODO: make sure this lines up with the correct Json file
+    with open("info.json", "r+") as info:
         # initializing API and domain info from file
         global api, domain
 
@@ -199,16 +223,12 @@ def mainProcess():
         print("API Key: " + CYELLOW + f"{api[0:20]}..." + CEND)
         print("Domain: " + CYELLOW + f"{domain}" + CEND)
 
-        # moving to the beginning of the file and then writing the information in
-        info.seek(0)
-        info.write(json_o)
-
     # TODO: debugging
-    # with open("upcoming.json", "r+") as response:
-    #     response.seek(0)
-    #     response.write(getUpcomingEvents())
+    with open("upcoming.json", "r+") as response:
+        response.seek(0)
+        response.write(getUpcomingEvents())
 
-mainProcess()
+
 
 # I would like to have this in mainProcess so that times will update dynamically, but the rest of this code also is not
 # in main, so I'm pretty sure it'll still fail to update if I do so :/ unfortunately restarting the program is the only
@@ -221,6 +241,8 @@ schedule.every().day.at(morning_time).do(mainProcess)
 
 schedule.every().day.at(evening_time).do(mainProcess)
 
-while True:
-    schedule.run_pending()
-    time.sleep(1)
+icon = pystray.Icon("Canvas Reminders", IMAGE, menu=pystray.Menu(
+    pystray.MenuItem("Close", on_clicked)
+))
+
+icon.run(runAll)
