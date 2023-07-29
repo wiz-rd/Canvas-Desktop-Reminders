@@ -12,3 +12,10 @@
  Once it's done, open info.txt and input your API key from Canvas, and the domain of your school (for example, "https://canvas.stanford.edu/"). You can create a new API key your settings tab in Canvas (Settings, scroll to Approved Integrations > "New Access Token") and input it there.
 
  If you'd like to see if it works without risking breaking anything with your classes or schedule, you may be able to go to your school's beta/testing area (you as a student, or even teacher, maybe, should be able to access it with your current account) which should be something along the lines of "https://<b>yourschool</b>.beta.instructure.com/" and resets every week.
+ 
+ # Necessary libraries/modules
+ You'll need two modules (via <strong>pip install</strong>, most likely):
+ <ul>
+ <li> schedule</li>
+ <li> tinyWinToast</li>
+ </ul>
