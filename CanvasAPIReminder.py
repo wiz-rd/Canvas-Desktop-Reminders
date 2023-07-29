@@ -9,7 +9,7 @@ from tinyWinToast.tinyWinToast import *
 from pathlib import Path
 
 # constants
-PATH = Path("crm.ico").resolve()
+PATH = Path("canvas_reminders.ico").resolve()
 API_ERROR = "There is likely a problem with your API key"
 NOW = datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
 # colors
@@ -25,25 +25,37 @@ today = datetime.datetime.today()
 todayString = datetime.datetime.fromtimestamp((time.time())).strftime("%Y-%m-%d")
 aWeekFromToday = datetime.datetime.fromtimestamp((time.time() + 604800)).isoformat()
 
+# the default config to be entered into info.json using the json library
+DEFAULT_CONFIG = {
+    "comment": "update both fields",
+    "api_key": "UPDATE ME",
+    "domain": "https://canvas.stanford.edu/",
+    "OPTIONAL": "the options below this line are optional",
+    "morning_reminder": "10:30",
+    "evening_reminder": "22:30"
+}
+
 # ensuring the files exist. This seems to be the only way to create files in Python..? All I could find at least
 try:
-    f = open("info.txt", "x")
+    f = open("info.json", "x")
     f.close()
 except FileExistsError:
-    print(CGREEN + "info.txt already exists" + CEND + CR)
-try:
-    f = open("upcoming.json", "x")
-    f.close()
-except FileExistsError:
-    print(CGREEN + "upcoming.json already exists" + CEND + CR)
-try:
-    f = open("assignments.json", "x")
-    f.close()
-except FileExistsError:
-    print(CGREEN + "assignments.json already exists" + CEND + CR)
+    print(CGREEN + "info.json already exists" + CEND + CR)
+
+# TODO: debugging
+# try:
+#     f = open("upcoming.json", "x")
+#     f.close()
+# except FileExistsError:
+#     print(CGREEN + "upcoming.json already exists" + CEND + CR)
+
 
 # functions
 def notify(assignment, dueDateUnformatted, courseUnformatted):
+    """
+    Creates an assignment notification with the given information
+    """
+
     # grabbing just the course name
     course = courseUnformatted.split(":")[1]
 
@@ -75,8 +87,12 @@ def notify(assignment, dueDateUnformatted, courseUnformatted):
         toast.show()
     else:
         return
-    
+
+
 def notifyError(error):
+    """
+    A simple function to notify if an error occurred
+    """
     toast = Toast()
     toast.setTitle("There was an error:")
     toast.setMessage(error + ". See the log for details.")
@@ -84,10 +100,12 @@ def notifyError(error):
     toast.setIcon(str(PATH), crop="circle")
     toast.show()
 
+
 def log(message):
     with open("log.txt", "a") as log:
         print(message)
         log.write(message)
+
 
 def log(message, secondaryMessage):
     with open("log.txt", "a") as log:
@@ -96,7 +114,11 @@ def log(message, secondaryMessage):
         log.write(NOW + ": " + message + "\n")
         log.write(secondaryMessage + "\n")
 
+
 def getUpcomingEvents():
+    """
+    Gets the upcoming Canvas events for the user via the API
+    """
     link = domain + "api/v1/users/self/upcoming_events" + "?access_token=" + api
     
     # attempts to pull upcoming assignments given the api key and domain
@@ -122,22 +144,55 @@ def getUpcomingEvents():
 
     return str(json.dumps(response.json()))
 
+
+def grabTimes() -> tuple[str, str]:
+    """
+    Grabs and returns the times to send reminders as selected by the user
+    """
+    with open("info.json", "r+") as info:
+
+        # loading in the json file
+        json_f = json.load(info)
+
+        morning = json_f["morning_reminder"]
+        evening = json_f["evening_reminder"]
+
+    return morning, evening
+
+
+def configSetup():
+    """
+    A single-use function to perform first-time setup of info.json
+    """
+
+    output = json.dumps(DEFAULT_CONFIG, indent=4)
+
+    with open("info.json", "r+") as cfg:
+        if cfg.readlines() == "\n" or cfg.readlines() == "":
+            cfg.write(output)
+        else:
+            return
+
+
 def mainProcess():
     # reading in the API key and domain to use
-    with open("PERSONALinfo.txt", "r+") as info:
+    with open("PERSONALinfo.json", "r+") as info:
         # initializing API and domain info from file
-        global api
-        global domain
-        api = info.readline()
-        domain = info.readline()
+        global api, domain
 
-        # removing newlines
-        api = api.strip()
-        domain = domain.strip()
+        # loading in the json file
+        json_f = json.load(info)
 
-        if (api == "<API-KEY>" or domain == "<DOMAIN>" or api == "" or domain == ""):
+        api = json_f["api_key"]
+        domain = json_f["domain"]
+
+        if (api == "UPDATE ME" or domain == "https://stanford.edu" or api == "" or domain == ""):
             api = input("Please enter your API key: ")
             domain = input("Please enter your school's domain: ")
+
+        json_f["api_key"] = api
+        json_f["domain"] = domain
+        json_o = json.dumps(json_f, indent=4)
 
         # for debugging and clarity
         print("\nPerforming an API call with the following information:")
@@ -146,24 +201,25 @@ def mainProcess():
 
         # moving to the beginning of the file and then writing the information in
         info.seek(0)
-        info.write(f"{api}\n{domain}\n# Enter your API key on the first line, and your school's Canvas domain for the second line, or follow the prompts in the program window")
+        info.write(json_o)
 
-    with open("upcoming.json", "r+") as response:
-        response.seek(0)
-        response.write(getUpcomingEvents())
+    # TODO: debugging
+    # with open("upcoming.json", "r+") as response:
+    #     response.seek(0)
+    #     response.write(getUpcomingEvents())
 
 mainProcess()
 
+# I would like to have this in mainProcess so that times will update dynamically, but the rest of this code also is not
+# in main, so I'm pretty sure it'll still fail to update if I do so :/ unfortunately restarting the program is the only
+# way I can think of to get this to update times.
+morning_time, evening_time = grabTimes()
 
+# TODO: potentially add an *args to have infinite custom times?
 
+schedule.every().day.at(morning_time).do(mainProcess)
 
-# TODO: potentially make two time options for the user to input into info.txt
-
-
-
-schedule.every().day.at("10:30").do(mainProcess)
-
-schedule.every().day.at("22:30").do(mainProcess)
+schedule.every().day.at(evening_time).do(mainProcess)
 
 while True:
     schedule.run_pending()
