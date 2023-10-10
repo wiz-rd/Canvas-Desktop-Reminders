@@ -5,8 +5,8 @@ import requests
 import datetime
 import json
 import platform
-# import pystray - uncomment this and some lines at the end of this code for systray integration
-from PIL import Image
+# import pystray # uncomment this and some lines at the end of this code for systray integration
+# from PIL import Image # uncomment this as well, and also the IMAGE variable on line ~30
 from pathlib import Path
 import os
 import pdb
@@ -27,7 +27,7 @@ PROGRAM_NAME = "CRM"
 PATH = Path("canvas_reminders.ico").resolve()
 API_ERROR = "There is likely a problem with your API key"
 NOW = datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
-IMAGE = Image.open("canvas_reminders.ico")
+# IMAGE = Image.open("canvas_reminders.ico")
 # colors
 CRED = '\033[91m'
 CGREEN = '\033[92m'
