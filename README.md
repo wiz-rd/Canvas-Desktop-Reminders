@@ -21,7 +21,7 @@
  <li> schedule</li>
  <li> tinyWinToast <em>(Windows users only)</em></li>
  <li> <s>pystray</s> (optional - you must edit the code for this to be usable)</li>
- <li> <s>pillow<s> (optional - see above ^)</li>
+ <li> <s>pillow</s> (optional - see above ^)</li>
  </ul>
  
  Otherwise Python will throw an error or two. I can automate the install or use a virtual environment or something, but I feel that is both outside of the scope of this project, and also a bit overkill given how lightweight this project is intended to be.
