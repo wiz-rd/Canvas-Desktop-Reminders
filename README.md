@@ -26,5 +26,5 @@
  
  Otherwise Python will throw an error or two. I can automate the install or use a virtual environment or something, but I feel that is both outside of the scope of this project, and also a bit overkill given how lightweight this project is intended to be.
 
- UPDATE: I added a <em>requirements.txt</e> file to this so that you can use virtual environments if you so please. Happy camping!
+ UPDATE: I added a <em>requirements.txt</em> file to this so that you can use virtual environments if you so please. Happy camping!
  (Note: The requirements file does not include tinyWinToast, which is necessary for Windows users)
