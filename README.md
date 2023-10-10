@@ -4,6 +4,8 @@
 
  Note: This is only built to work on Windows. I don't know how to work it on other OS's, unfortunately.
 
+ UPDATE: I got it working on other OS's. It now officially supports <strong>Linux Mint</strong> and really any distribution that works with the <code>notify-send</code> command.
+
  # How to use:
  First, clone the repository. I may export this into an exe for anyone to use, but for now it'll remain as is.
 
@@ -18,7 +20,7 @@
  <ul>
  <li> schedule</li>
  <li> tinyWinToast</li>
- <li> pystray</li>
+ <li> pystray (optional - you must edit the code for this to be usable)</li>
  <li> pillow</li>
  </ul>
  
