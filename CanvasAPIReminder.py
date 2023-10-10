@@ -1,16 +1,29 @@
 # Canvas API Reminder Project - @wiz-rd
 
-import schedule
 import time
 import requests
 import datetime
 import json
-import pystray
+import platform
+# import pystray - uncomment this and some lines at the end of this code for systray integration
 from PIL import Image
-from tinyWinToast.tinyWinToast import *
 from pathlib import Path
+import os
+import pdb
+
+PLATFORM = platform.system()
+PLATFORM_WINDOWS = "Win" in PLATFORM
+PLATFORM_LINUX = "Lin" in PLATFORM
+
+try:
+    import schedule
+    if PLATFORM_WINDOWS:
+        from tinyWinToast.tinyWinToast import *
+except:
+    print("Some necessary modules are missing. Try 'pip install -r requirements.txt'. See README for more information. ")
 
 # constants
+PROGRAM_NAME = "CRM"
 PATH = Path("canvas_reminders.ico").resolve()
 API_ERROR = "There is likely a problem with your API key"
 NOW = datetime.datetime.now().strftime("%d/%m/%Y, %H:%M:%S")
@@ -79,14 +92,60 @@ def on_clicked(icon, item):
         exit(0)
 
 
+def notifyLinux(assignment, dueDateUnformatted, courseUnformatted):
+    """
+    Sends a notification on Linux as opposed to Windows
+    """
+
+    course = courseUnformatted
+
+    if ":" in course:
+        course = courseUnformatted.split(":")[1]
+
+    # getting the date as a string and converting it to a date object for delta time
+    dueDateFormatted = datetime.datetime.strptime(dueDateUnformatted, "%Y-%m-%dT%H:%M:%SZ")
+
+    # calculates days remaining
+    timeUntil = (dueDateFormatted - today).days
+
+    # for some reason - likely because the due date is often at 11:59 - the day given is one day past the actual due date. This is shifting it back by 4 hours to account for that
+    # NOTE: this is a temporary thing, if it causes issues, please let me know and I'll attempt to work out a different solution.
+    timeShifted = dueDateFormatted - datetime.timedelta(hours=4)
+
+    # formats this for ease and American eyes
+    # also - allegedly translates it to the user's timezone... no luck with this yet, though
+    dueDateTZ = timeShifted.astimezone()
+    dueDate = dueDateTZ.replace().astimezone().strftime("%m/%d")
+
+    # moving this to a separate variable for ease of editing
+    message = "\nYou have " + str(timeUntil) + " days left to submit!"
+
+    if (timeUntil <= 7):
+        # showing a notification with tinyWinToast
+        os.system(f'notify-send -i {PROGRAM_NAME} "{course}" "{assignment} is due on {dueDate}!\n{message}"')
+    else:
+        return
+
+
+def notifyErrorLinux(error):
+    """
+    A simple function to notify if an error occurred (Linux edition)
+    """
+    os.system(f"notify-send -i {PROGRAM_NAME} 'CRM Error:' '{error}\n See the log for details.'")
+    
+
+
 # functions
-def notify(assignment, dueDateUnformatted, courseUnformatted):
+def notifyWin(assignment, dueDateUnformatted, courseUnformatted):
     """
     Creates an assignment notification with the given information
     """
 
+    course = courseUnformatted
+
     # grabbing just the course name
-    course = courseUnformatted.split(":")[1]
+    if ":" in courseUnformatted:
+        course = courseUnformatted.split(":")[1]
 
     # getting the date as a string and converting it to a date object for delta time
     dueDateFormatted = datetime.datetime.strptime(dueDateUnformatted, "%Y-%m-%dT%H:%M:%SZ")
@@ -118,7 +177,7 @@ def notify(assignment, dueDateUnformatted, courseUnformatted):
         return
 
 
-def notifyError(error):
+def notifyErrorWin(error):
     """
     A simple function to notify if an error occurred
     """
@@ -161,15 +220,27 @@ def getUpcomingEvents():
     upcomings = json.loads(json.dumps(response.json()))
 
     for upcoming in upcomings:
-        try:
-            notify(upcoming["title"], upcoming["assignment"]["due_at"], upcoming["context_name"])
-        except Exception as e:
-            print(e)
+        if PLATFORM_WINDOWS:
             try:
-                print(upcoming["title"] + " is not an assignment, skipping...")
-            except TypeError:
-                log("The API key you input is likely invalid. Please try again or enter a new one. See the API response here:", str(upcomings))
-                notifyError(API_ERROR)
+                notifyWin(upcoming["title"], upcoming["assignment"]["due_at"], upcoming["context_name"])
+            except Exception as e:
+                print(e, "   line 227")
+                try:
+                    print(upcoming["title"] + " is not an assignment, skipping...")
+                except TypeError:
+                    log("The API key you input is likely invalid. Please try again or enter a new one. See the API response here:", str(upcomings))
+                    notifyErrorWin(API_ERROR)
+        elif PLATFORM_LINUX:
+            try:
+                notifyLinux(upcoming["title"], upcoming["assignment"]["due_at"], upcoming["context_name"])
+            except Exception as e:
+                print(e, "   line 237")
+                # pdb.post_mortem()
+                try:
+                    print(upcoming["title"] + " is not an assignment, skipping...")
+                except TypeError:
+                    log("The API key you input is likely invalid. Please try again or enter a new one. See the API response here:", str(upcomings))
+                    notifyErrorWin(API_ERROR)
 
     return str(json.dumps(response.json()))
 
@@ -235,14 +306,17 @@ def mainProcess():
 # way I can think of to get this to update times.
 morning_time, evening_time = grabTimes()
 
+mainProcess()
+
 # TODO: potentially add an *args to have infinite custom times?
 
 schedule.every().day.at(morning_time).do(mainProcess)
 
 schedule.every().day.at(evening_time).do(mainProcess)
 
-icon = pystray.Icon("Canvas Reminders", IMAGE, menu=pystray.Menu(
-    pystray.MenuItem("Close", on_clicked)
-))
+# uncomment this and line 8 for systray integration. Should be crossplatform
+# icon = pystray.Icon("Canvas Reminders", IMAGE, menu=pystray.Menu(
+#     pystray.MenuItem("Close", on_clicked)
+# ))
 
-icon.run(runAll)
+# icon.run(runAll)
