@@ -23,6 +23,9 @@ except:
     print("Some necessary modules are missing. Try 'pip install -r requirements.txt'. See README for more information. ")
 
 # constants
+CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
+INFO_FILE = os.path.normpath(CURRENT_DIR + "/info.json")
+UPCOMING_FILE = os.path.normpath(CURRENT_DIR + "/upcoming.json")
 PROGRAM_NAME = "CRM"
 PATH = Path("canvas_reminders.ico").resolve()
 API_ERROR = "There is likely a problem with your API key"
@@ -60,7 +63,7 @@ def configSetup():
     output = json.dumps(DEFAULT_CONFIG, indent=4)
 
     # TODO: make sure this lines up with the correct json
-    with open("info.json", "r+") as cfg:
+    with open(INFO_FILE, "r+") as cfg:
         if len(cfg.read()) < 10:
             cfg.seek(0)
             cfg.write(output)
@@ -72,17 +75,17 @@ def configSetup():
 
 # ensuring the files exist. This seems to be the only way to create files in Python..? All I could find at least
 try:
-    open("info.json", "x").close()
+    open(INFO_FILE, "x").close()
     configSetup()
     exit(0)
 except FileExistsError:
-    print(CGREEN + "info.json already exists" + CEND + CR)
+    print(CGREEN + f"{INFO_FILE} already exists" + CEND + CR)
 
 # TODO: debugging // this file stores all upcoming events. Uncomment this and the other debugging TODO to see more information in file form
 try:
-    open("upcoming.json", "x").close()
+    open(UPCOMING_FILE, "x").close()
 except FileExistsError:
-    print(CGREEN + "upcoming.json already exists" + CEND + CR)
+    print(CGREEN + f"{UPCOMING_FILE} already exists" + CEND + CR)
 
 
 def on_clicked(icon, item):
@@ -249,7 +252,7 @@ def grabTimes() -> tuple[str, str]:
     """
     Grabs and returns the times to send reminders as selected by the user
     """
-    with open("info.json", "r") as info:
+    with open(INFO_FILE, "r") as info:
 
         # loading in the json file
         json_f = json.load(info)
@@ -271,7 +274,7 @@ def runAll(icon):
 def mainProcess():
     # reading in the API key and domain to use
     # TODO: make sure this lines up with the correct Json file
-    with open("info.json", "r+") as info:
+    with open(INFO_FILE, "r+") as info:
         # initializing API and domain info from file
         global api, domain
 
@@ -295,7 +298,7 @@ def mainProcess():
         print("Domain: " + CYELLOW + f"{domain}" + CEND)
 
     # TODO: debugging
-    with open("upcoming.json", "r+") as response:
+    with open(UPCOMING_FILE, "r+") as response:
         response.seek(0)
         response.write(getUpcomingEvents())
 
