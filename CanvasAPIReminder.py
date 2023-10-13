@@ -15,6 +15,12 @@ PLATFORM = platform.system()
 PLATFORM_WINDOWS = "Win" in PLATFORM
 PLATFORM_LINUX = "Lin" in PLATFORM
 
+# adding a platform-specific slash because idk how to do this the cool, professional way
+if PLATFORM_WINDOWS:
+    slash = "\\"
+else:
+    slash = "/"
+
 try:
     import schedule
     if PLATFORM_WINDOWS:
@@ -24,8 +30,8 @@ except:
 
 # constants
 CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
-INFO_FILE = os.path.normpath(CURRENT_DIR + "/info.json")
-UPCOMING_FILE = os.path.normpath(CURRENT_DIR + "/upcoming.json")
+INFO_FILE = os.path.normpath(CURRENT_DIR + slash + "info.json")
+UPCOMING_FILE = os.path.normpath(CURRENT_DIR + slash + "upcoming.json")
 PROGRAM_NAME = "CRM"
 PATH = Path("canvas_reminders.ico").resolve()
 API_ERROR = "There is likely a problem with your API key"
