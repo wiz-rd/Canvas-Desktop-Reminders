@@ -101,7 +101,7 @@ def on_clicked(icon, item):
         exit(0)
 
 
-def notifyLinux(assignment, dueDateUnformatted, courseUnformatted):
+def notifyLinux(assignment, dueDateUnformatted, courseUnformatted, submitted):
     """
     Sends a notification on Linux as opposed to Windows
     """
@@ -131,7 +131,7 @@ def notifyLinux(assignment, dueDateUnformatted, courseUnformatted):
 
     if (timeUntil <= 7):
         # showing a notification with tinyWinToast
-        os.system(f'notify-send -i {PROGRAM_NAME} "{course}" "{assignment} is due on {dueDate}!\n{message}"')
+        os.system(f'notify-send -i {PROGRAM_NAME} "{course}" "{assignment} is due on {dueDate}!\n{message}\n(Submitted: {submitted})"')
     else:
         return
 
@@ -145,7 +145,7 @@ def notifyErrorLinux(error):
 
 
 # functions
-def notifyWin(assignment, dueDateUnformatted, courseUnformatted):
+def notifyWin(assignment, dueDateUnformatted, courseUnformatted, submitted):
     """
     Creates an assignment notification with the given information
     """
@@ -172,7 +172,7 @@ def notifyWin(assignment, dueDateUnformatted, courseUnformatted):
     dueDate = dueDateTZ.replace().astimezone().strftime("%m/%d")
 
     # moving this to a separate variable for ease of editing
-    message = "\nYou have " + str(timeUntil) + " days left to submit!"
+    message = "\nYou have " + str(timeUntil) + f" days left to submit!\n(Submitted: {submitted})"
 
     if (timeUntil <= 7):
         # showing a notification with tinyWinToast
@@ -231,7 +231,7 @@ def getUpcomingEvents():
     for upcoming in upcomings:
         if PLATFORM_WINDOWS:
             try:
-                notifyWin(upcoming["title"], upcoming["assignment"]["due_at"], upcoming["context_name"])
+                notifyWin(upcoming["title"], upcoming["assignment"]["due_at"], upcoming["context_name"], upcoming["assignment"]["has_submitted_submissions"])
             except Exception as e:
                 print(e, "   line 227")
                 try:
@@ -241,7 +241,7 @@ def getUpcomingEvents():
                     notifyErrorWin(API_ERROR)
         elif PLATFORM_LINUX:
             try:
-                notifyLinux(upcoming["title"], upcoming["assignment"]["due_at"], upcoming["context_name"])
+                notifyLinux(upcoming["title"], upcoming["assignment"]["due_at"], upcoming["context_name"], upcoming["assignment"]["has_submitted_submissions"])
             except Exception as e:
                 print(e, "   line 237")
                 # pdb.post_mortem()
