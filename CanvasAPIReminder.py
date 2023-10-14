@@ -305,6 +305,7 @@ def mainProcess():
 
     # TODO: debugging
     with open(UPCOMING_FILE, "r+") as response:
+        response.truncate(0)
         response.seek(0)
         response.write(getUpcomingEvents())
 
