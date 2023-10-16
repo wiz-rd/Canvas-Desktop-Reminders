@@ -324,6 +324,10 @@ schedule.every().day.at(morning_time).do(mainProcess)
 
 schedule.every().day.at(evening_time).do(mainProcess)
 
+while True:
+        schedule.run_pending()
+        time.sleep(20) # makes this less precise, but uses a lot less processing power
+
 # uncomment this and line 8 for systray integration. Should be crossplatform
 # icon = pystray.Icon("Canvas Reminders", IMAGE, menu=pystray.Menu(
 #     pystray.MenuItem("Close", on_clicked)
