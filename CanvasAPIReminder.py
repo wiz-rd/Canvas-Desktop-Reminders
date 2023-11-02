@@ -9,7 +9,6 @@ import platform
 # from PIL import Image # uncomment this as well, and also the IMAGE variable on line ~30
 from pathlib import Path
 import os
-import pdb
 
 PLATFORM = platform.system()
 PLATFORM_WINDOWS = "Win" in PLATFORM
@@ -56,8 +55,10 @@ DEFAULT_CONFIG = {
     "api_key": "update me",
     "domain": "https://canvas.stanford.edu/",
     "OPTIONAL": "the options below this line are optional",
-    "morning_reminder": "10:30",
-    "evening_reminder": "22:30"
+    "reminder_times": [
+        "10:30",
+        "22:30"
+    ]
 }
 
 
@@ -263,10 +264,9 @@ def grabTimes() -> tuple[str, str]:
         # loading in the json file
         json_f = json.load(info)
 
-        morning = json_f["morning_reminder"]
-        evening = json_f["evening_reminder"]
+        times = json_f["reminder_times"]
 
-    return morning, evening
+    return times
 
 
 def runAll(icon):
@@ -314,15 +314,15 @@ def mainProcess():
 # I would like to have this in mainProcess so that times will update dynamically, but the rest of this code also is not
 # in main, so I'm pretty sure it'll still fail to update if I do so :/ unfortunately restarting the program is the only
 # way I can think of to get this to update times.
-morning_time, evening_time = grabTimes()
+times = grabTimes()
 
 mainProcess()
 
-# TODO: potentially add an *args to have infinite custom times?
-
-schedule.every().day.at(morning_time).do(mainProcess)
-
-schedule.every().day.at(evening_time).do(mainProcess)
+for t in times:
+    schedule.every().day.at(t).do(mainProcess)
+    schedule.every().day.at(t).do(mainProcess)
+    # TODO: maybe make it possible to schedule less frequently than every day...? I doubt people would use that, though
+    # and it's most likely far more effort than it's worth.
 
 while True:
         schedule.run_pending()
