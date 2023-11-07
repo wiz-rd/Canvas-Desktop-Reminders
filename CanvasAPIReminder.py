@@ -255,7 +255,7 @@ def getUpcomingEvents():
     return str(json.dumps(response.json()))
 
 
-def grabTimes() -> tuple[str, str]:
+def grabTimes() -> tuple:
     """
     Grabs and returns the times to send reminders as selected by the user
     """
@@ -319,7 +319,6 @@ times = grabTimes()
 mainProcess()
 
 for t in times:
-    schedule.every().day.at(t).do(mainProcess)
     schedule.every().day.at(t).do(mainProcess)
     # TODO: maybe make it possible to schedule less frequently than every day...? I doubt people would use that, though
     # and it's most likely far more effort than it's worth.
