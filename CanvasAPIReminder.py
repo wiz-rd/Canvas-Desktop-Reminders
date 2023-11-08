@@ -56,8 +56,8 @@ DEFAULT_CONFIG = {
     "domain": "https://canvas.stanford.edu/",
     "OPTIONAL": "the options below this line are optional",
     "reminder_times": [
-        "10:30",
-        "22:30"
+        "09:30",
+        "21:30"
     ]
 }
 
@@ -132,7 +132,7 @@ def notifyLinux(assignment, dueDateUnformatted, courseUnformatted, submitted):
 
     if (timeUntil <= 7):
         # showing a notification with tinyWinToast
-        os.system(f'notify-send -i {PROGRAM_NAME} "{course}" "{assignment} is due on {dueDate}!\n{message}\n(Submitted: {submitted})"')
+        os.system(f'notify-send -i {PROGRAM_NAME} "{course}" "{assignment} is due on {dueDate}!\n{message}"') #\n(Submitted: {submitted})"')
     else:
         return
 
@@ -173,7 +173,7 @@ def notifyWin(assignment, dueDateUnformatted, courseUnformatted, submitted):
     dueDate = dueDateTZ.replace().astimezone().strftime("%m/%d")
 
     # moving this to a separate variable for ease of editing
-    message = "\nYou have " + str(timeUntil) + f" days left to submit!\n(Submitted: {submitted})"
+    message = "\nYou have " + str(timeUntil) + f" days left to submit!" #\n(Submitted: {submitted})"
 
     if (timeUntil <= 7):
         # showing a notification with tinyWinToast
@@ -319,6 +319,7 @@ times = grabTimes()
 mainProcess()
 
 for t in times:
+    print(t)
     schedule.every().day.at(t).do(mainProcess)
     # TODO: maybe make it possible to schedule less frequently than every day...? I doubt people would use that, though
     # and it's most likely far more effort than it's worth.
