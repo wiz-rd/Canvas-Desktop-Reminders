@@ -1,4 +1,8 @@
 
+Lib/
+Scripts/
+Include/
+pyvenv.cfg
 PERSONALinfo.txt
 *.json
 info.txt
