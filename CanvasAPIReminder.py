@@ -251,7 +251,7 @@ def getUpcomingEvents():
                     print(upcoming["title"] + " is not an assignment, skipping...")
                 except TypeError:
                     log("The API key you input is likely invalid. Please try again or enter a new one. See the API response here:", str(upcomings))
-                    notifyErrorWin(API_ERROR)
+                    notifyErrorLinux(API_ERROR)
 
     return str(json.dumps(response.json()))
 
