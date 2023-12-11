@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 # Canvas API Reminder Project - @wiz-rd
 
 import time
