@@ -121,7 +121,12 @@ def notifyLinux(assignment, dueDateUnformatted, courseUnformatted, submitted):
 
     # for some reason - likely because the due date is often at 11:59 - the day given is one day past the actual due date. This is shifting it back by 4 hours to account for that
     # NOTE: this is a temporary thing, if it causes issues, please let me know and I'll attempt to work out a different solution.
-    timeShifted = dueDateFormatted - datetime.timedelta(hours=4)
+    timeShifted = dueDateFormatted - datetime.timedelta(hours=8)
+
+    #
+    # Modified the above code ^ to move back 8 hourse instead of just 4. I'm not sure why, but 4 hours (for a particular class I have),
+    # doesn't seem to be working :/ will look into this more when I'm done with my homework
+    #
 
     # formats this for ease and American eyes
     # also - allegedly translates it to the user's timezone... no luck with this yet, though
@@ -291,7 +296,7 @@ def mainProcess():
         api = json_f["api_key"]
         domain = json_f["domain"]
 
-        if (api == "UPDATE ME" or domain == "https://stanford.edu" or api == "" or domain == ""):
+        if (api == "UPDATE ME" or domain == "https://canvas.stanford.edu" or api == "" or domain == ""):
             api = input("Please enter your API key: ")
             domain = input("Please enter your school's domain: ")
 

@@ -6,3 +6,4 @@ pyvenv.cfg
 PERSONALinfo.txt
 *.json
 info.txt
+log.txt
