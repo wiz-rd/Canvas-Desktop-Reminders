@@ -52,14 +52,15 @@ aWeekFromToday = datetime.datetime.fromtimestamp((time.time() + 604800)).isoform
 
 # the default config to be entered into info.json using the json library
 DEFAULT_CONFIG = {
-    "COMMENT": "update both fields",
+    "COMMENT": "update the fields. For 'format', m = month, d = day",
     "api_key": "update me",
-    "domain": "https://canvas.stanford.edu/",
+    "domain": "https://canvas.(update me).edu/",
+    "format": "m/d",
     "OPTIONAL": "the options below this line are optional",
     "reminder_times": [
         "09:30",
         "21:30"
-    ]
+    ],
 }
 
 
@@ -103,7 +104,7 @@ def on_clicked(icon, item):
         exit(0)
 
 
-def notifyLinux(assignment, dueDateUnformatted, courseUnformatted, submitted):
+def notifyLinux(assignment, dueDateUnformatted, courseUnformatted, submitted, md1, md2):
     """
     Sends a notification on Linux as opposed to Windows
     """
@@ -121,17 +122,15 @@ def notifyLinux(assignment, dueDateUnformatted, courseUnformatted, submitted):
 
     # for some reason - likely because the due date is often at 11:59 - the day given is one day past the actual due date. This is shifting it back by 4 hours to account for that
     # NOTE: this is a temporary thing, if it causes issues, please let me know and I'll attempt to work out a different solution.
-    timeShifted = dueDateFormatted - datetime.timedelta(hours=8)
-
-    #
-    # Modified the above code ^ to move back 8 hourse instead of just 4. I'm not sure why, but 4 hours (for a particular class I have),
-    # doesn't seem to be working :/ will look into this more when I'm done with my homework
-    #
-
-    # formats this for ease and American eyes
+    # NOTE: this is no longer the case! as far as my tests have shown, this issue is resolved. See the next couple of lines
+    # (original solution): # timeShifted = dueDateFormatted - datetime.timedelta(hours=8)
+    
+    # formats this for ease and American eyes (month/day)
     # also - allegedly translates it to the user's timezone... no luck with this yet, though
-    dueDateTZ = timeShifted.astimezone()
-    dueDate = dueDateTZ.replace().astimezone().strftime("%m/%d")
+    # update: this ^ issue seems to have been fixed thanks to stack overflow at:
+    # https://stackoverflow.com/questions/4563272/how-to-convert-a-utc-datetime-to-a-local-datetime-using-only-standard-library
+    dueDateTZ = dueDateFormatted.astimezone()
+    dueDate = dueDateTZ.replace(tzinfo=datetime.timezone.utc).astimezone(tz=None).strftime(f"%{md1}/%{md2}")
 
     # moving this to a separate variable for ease of editing
     message = "\nYou have " + str(timeUntil) + " days left to submit!"
@@ -152,7 +151,7 @@ def notifyErrorLinux(error):
 
 
 # functions
-def notifyWin(assignment, dueDateUnformatted, courseUnformatted, submitted):
+def notifyWin(assignment, dueDateUnformatted, courseUnformatted, submitted, md1, md2):
     """
     Creates an assignment notification with the given information
     """
@@ -171,12 +170,15 @@ def notifyWin(assignment, dueDateUnformatted, courseUnformatted, submitted):
 
     # for some reason - likely because the due date is often at 11:59 - the day given is one day past the actual due date. This is shifting it back by 4 hours to account for that
     # NOTE: this is a temporary thing, if it causes issues, please let me know and I'll attempt to work out a different solution.
-    timeShifted = dueDateFormatted - datetime.timedelta(hours=4)
-
-    # formats this for ease and American eyes
+    # NOTE: this is no longer the case! as far as my tests have shown, this issue is resolved. See the next couple of lines
+    # (original solution): # timeShifted = dueDateFormatted - datetime.timedelta(hours=8)
+    
+    # formats this for ease and American eyes (month/day)
     # also - allegedly translates it to the user's timezone... no luck with this yet, though
-    dueDateTZ = timeShifted.astimezone()
-    dueDate = dueDateTZ.replace().astimezone().strftime("%m/%d")
+    # update: this ^ issue seems to have been fixed thanks to stack overflow at:
+    # https://stackoverflow.com/questions/4563272/how-to-convert-a-utc-datetime-to-a-local-datetime-using-only-standard-library
+    dueDateTZ = dueDateFormatted.astimezone()
+    dueDate = dueDateTZ.replace(tzinfo=datetime.timezone.utc).astimezone(tz=None).strftime(f"%{md1}/%{md2}")
 
     # moving this to a separate variable for ease of editing
     message = "\nYou have " + str(timeUntil) + f" days left to submit!" #\n(Submitted: {submitted})"
@@ -235,10 +237,21 @@ def getUpcomingEvents():
     # loads json received from Canvas
     upcomings = json.loads(json.dumps(response.json()))
 
+    # takes the month/day format values. it should be either m/d OR d/m
+    # I could probably do "md1, md2 = dformat" but I'm scared it won't work
+    # and there's no real incentive in this case to do that
+    md1, md2 = "m", "d"
+    try:
+        md1, md2 = dformat[0], dformat[1]
+    except (AttributeError, Exception) as e:
+        # catching if the given format isn't a string
+        print(e)
+        log(f"{e}\nThe given format was missing a '/' or is not a string.", f"Please structure your JSON file as follows:\n{json.dumps(DEFAULT_CONFIG, indent=4)}")
+    
     for upcoming in upcomings:
         if PLATFORM_WINDOWS:
             try:
-                notifyWin(upcoming["title"], upcoming["assignment"]["due_at"], upcoming["context_name"], upcoming["assignment"]["has_submitted_submissions"])
+                notifyWin(upcoming["title"], upcoming["assignment"]["due_at"], upcoming["context_name"], upcoming["assignment"]["has_submitted_submissions"], md1, md2)
             except Exception as e:
                 print(e, "   line 227")
                 try:
@@ -248,7 +261,7 @@ def getUpcomingEvents():
                     notifyErrorWin(API_ERROR)
         elif PLATFORM_LINUX:
             try:
-                notifyLinux(upcoming["title"], upcoming["assignment"]["due_at"], upcoming["context_name"], upcoming["assignment"]["has_submitted_submissions"])
+                notifyLinux(upcoming["title"], upcoming["assignment"]["due_at"], upcoming["context_name"], upcoming["assignment"]["has_submitted_submissions"], md1, md2)
             except Exception as e:
                 print(e, "   line 237")
                 # pdb.post_mortem()
@@ -288,13 +301,22 @@ def mainProcess():
     # TODO: make sure this lines up with the correct Json file
     with open(INFO_FILE, "r+") as info:
         # initializing API and domain info from file
-        global api, domain
+        global api, domain, dformat
 
         # loading in the json file
         json_f = json.load(info)
 
         api = json_f["api_key"]
         domain = json_f["domain"]
+        dformat = "m/d".split("/")
+        # setting a default date format
+
+        try:
+            dformat = json_f["format"].split("/")
+        except (AttributeError, Exception) as e:
+            # catching if the given format isn't a string
+            print(e)
+            log(f"{e}\nThe given format was missing a '/' or is not a string.", f"Please structure your JSON file as follows:\n{json.dumps(DEFAULT_CONFIG)}")
 
         if (api == "UPDATE ME" or domain == "https://canvas.stanford.edu" or api == "" or domain == ""):
             api = input("Please enter your API key: ")
@@ -302,7 +324,6 @@ def mainProcess():
 
         json_f["api_key"] = api
         json_f["domain"] = domain
-        json_o = json.dumps(json_f, indent=4)
 
         # for debugging and clarity
         print("\nPerforming an API call with the following information:")
