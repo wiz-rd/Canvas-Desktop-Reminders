@@ -151,7 +151,7 @@ def notifyErrorLinux(error):
 
 
 # functions
-def notifyWin(assignment, dueDateUnformatted, courseUnformatted, submitted, md1, md2):
+def notifyWin(assignment, dueDateUnformatted, courseUnformatted, submitted, md1, md2, url):
     """
     Creates an assignment notification with the given information
     """
@@ -189,6 +189,7 @@ def notifyWin(assignment, dueDateUnformatted, courseUnformatted, submitted, md1,
         toast.setTitle(f"{course}", maxLines=1)
         toast.setMessage(f"{assignment} is due on {dueDate}!" + message, maxLines=4)
         toast.setAppID("CRM")
+        toast.addButton(Button(content="URL", activationType="protocol", arguments=url, pendingUpdate=False))
         toast.setIcon(str(PATH), crop="circle")
         toast.show()
     else:
@@ -251,9 +252,9 @@ def getUpcomingEvents():
     for upcoming in upcomings:
         if PLATFORM_WINDOWS:
             try:
-                notifyWin(upcoming["title"], upcoming["assignment"]["due_at"], upcoming["context_name"], upcoming["assignment"]["has_submitted_submissions"], md1, md2)
+                notifyWin(upcoming["title"], upcoming["assignment"]["due_at"], upcoming["context_name"], upcoming["assignment"]["has_submitted_submissions"], md1, md2, upcoming["html_url"])
             except Exception as e:
-                print(e, "   line 227")
+                print(e, "   line 257")
                 try:
                     print(upcoming["title"] + " is not an assignment, skipping...")
                 except TypeError:
