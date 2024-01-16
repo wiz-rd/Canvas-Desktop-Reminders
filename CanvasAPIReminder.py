@@ -186,10 +186,21 @@ def notifyWin(assignment, dueDateUnformatted, courseUnformatted, submitted, md1,
     if (timeUntil <= 7):
         # showing a notification with tinyWinToast
         toast = Toast()
+        button = Button(content="URL", activationType="protocol", arguments=url, pendingUpdate=False)
         toast.setTitle(f"{course}", maxLines=1)
         toast.setMessage(f"{assignment} is due on {dueDate}!" + message, maxLines=4)
         toast.setAppID("CRM")
-        toast.addButton(Button(content="URL", activationType="protocol", arguments=url, pendingUpdate=False))
+        # sooo... this particular python library is kinda screwy.
+        # you can use a loop to make notificaions, but if you do so with *buttons*,
+        # it adds a button each time - so after 5 notifications you have 5 buttons.
+        # I have no idea why this is the case, but hopefully this code will just change the url
+        # for each button if a button already exists, as opposed to appending one each time. 
+        if len(toast.config.ACTIONS) <= 0:
+            toast.addButton(button)
+        else:
+            toast.addButton(button)
+            # deleting other buttons that mysteriously add themselves
+            toast.config.ACTIONS.pop(0)
         toast.setIcon(str(PATH), crop="circle")
         toast.show()
     else:
